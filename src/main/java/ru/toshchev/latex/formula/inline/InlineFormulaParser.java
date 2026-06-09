@@ -6,27 +6,33 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Splits a string containing embedded LaTeX formulas into a list of {@link ContentToken}s.
+ * Parses a string containing Markdown inline formatting and LaTeX formulas
+ * into an ordered list of {@link ContentToken}s.
  *
- * <p>Recognised delimiters:
+ * <p>Recognised syntax (evaluated in this priority order):
  * <ul>
- *   <li>{@code $...$} — inline math</li>
- *   <li>{@code \(...\)} — inline math</li>
- *   <li>{@code \[...\]} — display math</li>
+ *   <li>{@code ***text***} / {@code ___text___} → {@link ContentToken.BoldItalic}</li>
+ *   <li>{@code **text**} / {@code __text__} → {@link ContentToken.Bold}</li>
+ *   <li>{@code *text*} / {@code _text_} → {@link ContentToken.Italic}</li>
+ *   <li>{@code ~~text~~} → {@link ContentToken.Strikethrough}</li>
+ *   <li>{@code `text`} → {@link ContentToken.Code}</li>
+ *   <li>{@code $text$} / {@code \[text\]} / {@code \(text\)} → {@link ContentToken.Formula}</li>
  * </ul>
- *
- * <p>Example input:
- * <pre>
- *   "Schrödinger's cat. $E=mc^2$. Look how lovely it is."
- * </pre>
- * produces: Text("Schrödinger's cat. "), Formula("E=mc^2"), Text(". Look how lovely it is.")
  */
 public class InlineFormulaParser {
 
-    private static final Pattern FORMULA_PATTERN = Pattern.compile(
-            "\\$(.+?)\\$"                  // $...$
-            + "|\\\\\\[(.+?)\\\\\\]"        // \[...\]
-            + "|\\\\\\((.+?)\\\\\\)",       // \(...\)
+    private static final Pattern PATTERN = Pattern.compile(
+            "\\*\\*\\*(.+?)\\*\\*\\*"      // ***bold-italic***
+            + "|___(.+?)___"                // ___bold-italic___
+            + "|\\*\\*(.+?)\\*\\*"          // **bold**
+            + "|__(.+?)__"                  // __bold__
+            + "|\\*(.+?)\\*"               // *italic*
+            + "|_(.+?)_"                   // _italic_
+            + "|~~(.+?)~~"                 // ~~strikethrough~~
+            + "|`(.+?)`"                   // `code`
+            + "|\\$(.+?)\\$"              // $formula$
+            + "|\\\\\\[(.+?)\\\\\\]"       // \[formula\]
+            + "|\\\\\\((.+?)\\\\\\)",      // \(formula\)
             Pattern.DOTALL
     );
 
@@ -35,15 +41,14 @@ public class InlineFormulaParser {
      */
     public List<ContentToken> parse(String input) {
         List<ContentToken> tokens = new ArrayList<>();
-        Matcher m = FORMULA_PATTERN.matcher(input);
+        Matcher m = PATTERN.matcher(input);
         int lastEnd = 0;
 
         while (m.find()) {
             if (m.start() > lastEnd) {
                 tokens.add(new ContentToken.Text(input.substring(lastEnd, m.start())));
             }
-            String latex = firstNonNull(m.group(1), m.group(2), m.group(3));
-            tokens.add(new ContentToken.Formula(latex.strip()));
+            tokens.add(toToken(m));
             lastEnd = m.end();
         }
 
@@ -54,10 +59,22 @@ public class InlineFormulaParser {
         return tokens;
     }
 
-    private static String firstNonNull(String... values) {
-        for (String v : values) {
-            if (v != null) return v;
-        }
-        throw new IllegalStateException("All groups were null — regex match inconsistency");
+    private static ContentToken toToken(Matcher m) {
+        // Groups 1-2: bold-italic
+        String g;
+        if ((g = m.group(1)) != null || (g = m.group(2)) != null) return new ContentToken.BoldItalic(g);
+        // Groups 3-4: bold
+        if ((g = m.group(3)) != null || (g = m.group(4)) != null) return new ContentToken.Bold(g);
+        // Groups 5-6: italic
+        if ((g = m.group(5)) != null || (g = m.group(6)) != null) return new ContentToken.Italic(g);
+        // Group 7: strikethrough
+        if ((g = m.group(7)) != null) return new ContentToken.Strikethrough(g);
+        // Group 8: code
+        if ((g = m.group(8)) != null) return new ContentToken.Code(g);
+        // Groups 9-11: formula
+        if ((g = m.group(9))  != null) return new ContentToken.Formula(g.strip());
+        if ((g = m.group(10)) != null) return new ContentToken.Formula(g.strip());
+        if ((g = m.group(11)) != null) return new ContentToken.Formula(g.strip());
+        throw new IllegalStateException("Unmatched group in regex");
     }
 }

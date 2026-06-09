@@ -37,9 +37,11 @@ public class Main {
             // Inline formula embedded in surrounding text
             InlineParagraphAppender appender = new InlineParagraphAppender();
             appender.append(content,
-                    "Schrödinger's cat is jealous of this presentation: " +
+                    "Schrödinger's cat is **jealous** of this *presentation*: " +
                     "$\\mathrm{i}\\hbar \\frac{\\partial}{\\partial t} \\Psi = \\hat{H}\\Psi$" +
-                    ". Look how lovely it is.");
+                    ". ~~Not really~~ — look how `lovely` it is.");
+
+            appender.append(content, "See **important** result: $E=mc^2$");
 
             try (FileOutputStream out = new FileOutputStream("output.pptx")) {
                 pptx.write(out);

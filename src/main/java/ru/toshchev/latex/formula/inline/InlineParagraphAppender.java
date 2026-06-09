@@ -35,14 +35,16 @@ public class InlineParagraphAppender {
     }
 
     /**
-     * Parses {@code text} for embedded LaTeX formulas and appends the resulting
-     * mixed paragraph to {@code shape}.
+     * Parses {@code text} for Markdown inline formatting and LaTeX formulas,
+     * then appends the resulting mixed paragraph to {@code shape}.
      *
-     * <p>Formulas are delimited by {@code $...$}, {@code \(...\)}, or {@code \[...\]}.</p>
+     * <p>Supported Markdown: {@code **bold**}, {@code *italic*}, {@code ***bold-italic***},
+     * {@code ~~strikethrough~~}, {@code `code`}, {@code $formula$}, {@code \[formula\]},
+     * {@code \(formula\)}.</p>
      *
      * @param shape the target text shape (e.g. a content placeholder)
      * @param text  the input string, e.g.
-     *              {@code "See $E=mc^2$ — beautiful!"}
+     *              {@code "See **important** result: $E=mc^2$"}
      * @throws LatexConversionException if any formula fails to convert
      */
     public void append(XSLFTextShape shape, String text) throws LatexConversionException {
@@ -61,8 +63,13 @@ public class InlineParagraphAppender {
 
         for (ContentToken token : tokens) {
             switch (token) {
-                case ContentToken.Text t -> appendTextRun(sb, t.value());
-                case ContentToken.Formula f -> appendFormulaRun(sb, f.latex());
+                case ContentToken.Text t         -> appendStyledRun(sb, t.value(), false, false, false, false);
+                case ContentToken.Bold t         -> appendStyledRun(sb, t.value(), true,  false, false, false);
+                case ContentToken.Italic t       -> appendStyledRun(sb, t.value(), false, true,  false, false);
+                case ContentToken.BoldItalic t   -> appendStyledRun(sb, t.value(), true,  true,  false, false);
+                case ContentToken.Strikethrough t -> appendStyledRun(sb, t.value(), false, false, true,  false);
+                case ContentToken.Code t         -> appendCodeRun(sb, t.value());
+                case ContentToken.Formula f      -> appendFormulaRun(sb, f.latex());
             }
         }
 
@@ -70,10 +77,29 @@ public class InlineParagraphAppender {
         return sb.toString();
     }
 
-    private void appendTextRun(StringBuilder sb, String text) {
-        sb.append("<a:r><a:t>")
-          .append(escapeXml(text))
-          .append("</a:t></a:r>");
+    private void appendStyledRun(StringBuilder sb, String text,
+                                 boolean bold, boolean italic,
+                                 boolean strike, boolean underline) {
+        boolean hasProps = bold || italic || strike || underline;
+        sb.append("<a:r>");
+        if (hasProps) {
+            sb.append("<a:rPr");
+            if (bold)      sb.append(" b=\"1\"");
+            if (italic)    sb.append(" i=\"1\"");
+            if (strike)    sb.append(" strike=\"sngStrike\"");
+            if (underline) sb.append(" u=\"sng\"");
+            sb.append("/>");
+        }
+        sb.append("<a:t>").append(escapeXml(text)).append("</a:t></a:r>");
+    }
+
+    private void appendCodeRun(StringBuilder sb, String text) {
+        sb.append("<a:r>")
+          .append("<a:rPr>")
+          .append("<a:latin typeface=\"Courier New\"/>")
+          .append("</a:rPr>")
+          .append("<a:t>").append(escapeXml(text)).append("</a:t>")
+          .append("</a:r>");
     }
 
     private void appendFormulaRun(StringBuilder sb, String latex) throws LatexConversionException {
