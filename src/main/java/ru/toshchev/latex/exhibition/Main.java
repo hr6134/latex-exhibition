@@ -1,4 +1,4 @@
-package ru.toshchev.latex;
+package ru.toshchev.latex.exhibition;
 
 import org.apache.poi.xslf.usermodel.SlideLayout;
 import org.apache.poi.xslf.usermodel.XMLSlideShow;
@@ -7,11 +7,13 @@ import org.apache.poi.xslf.usermodel.XSLFSlideLayout;
 import org.apache.poi.xslf.usermodel.XSLFSlideMaster;
 import org.apache.poi.xslf.usermodel.XSLFTextBox;
 import org.apache.poi.xslf.usermodel.XSLFTextShape;
-import ru.toshchev.latex.formula.markdown.MarkdownSlideRenderer;
-import ru.toshchev.latex.formula.markdown.PptxTemplateRenderer;
+import ru.toshchev.latex.exhibition.formula.markdown.MarkdownSlideRenderer;
+import ru.toshchev.latex.exhibition.provider.ClasspathFileProvider;
+import ru.toshchev.latex.exhibition.provider.LocalFileProvider;
+import ru.toshchev.latex.exhibition.provider.PptxFileProvider;
+import ru.toshchev.latex.exhibition.provider.StreamFileProvider;
 
 import java.awt.geom.Rectangle2D;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.util.Map;
 
@@ -54,7 +56,7 @@ public class Main {
     public static void generateFromTemplate() throws Exception {
         Map<String, String> values = Map.of(
             "{title}", 
-                "Best Presentation Ever",
+                "Best Presentation Ever!!!",
             "{leftColumn}",
                 """
                 ## Key equations
@@ -84,10 +86,23 @@ public class Main {
                 """
         );
 
-        try (FileInputStream template = new FileInputStream("latex-exibition.pptx");
-             FileOutputStream out     = new FileOutputStream("output-from-template.pptx")) {
-            new PptxTemplateRenderer().render(template, out, values);
+        // Option 1: local files (used here)
+        try (PptxFileProvider provider = new LocalFileProvider(
+                "latex-exibition.pptx", "output-from-template.pptx")) {
+            LatexExhibition.fromProvider(provider).render(values);
         }
+
+        // Option 2: template bundled inside the jar (classpath resource)
+        // try (PptxFileProvider provider = new ClasspathFileProvider(
+        //         "/templates/latex-exibition.pptx", "output-from-template.pptx")) {
+        //     LatexExhibition.fromProvider(provider).render(values);
+        // }
+
+        // Option 3: arbitrary streams (e.g. S3, HTTP, ByteArrayOutputStream)
+        // try (PptxFileProvider provider = new StreamFileProvider(templateInputStream, outputStream)) {
+        //     LatexExhibition.fromProvider(provider).render(values);
+        // }
+
         System.out.println("Saved: output-from-template.pptx");
     }
 

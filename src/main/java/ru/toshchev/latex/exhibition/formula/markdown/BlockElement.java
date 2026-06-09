@@ -1,4 +1,4 @@
-package ru.toshchev.latex.formula.markdown;
+package ru.toshchev.latex.exhibition.formula.markdown;
 
 import java.util.List;
 

@@ -1,10 +1,10 @@
-package ru.toshchev.latex.formula.markdown;
+package ru.toshchev.latex.exhibition.formula.markdown;
 
 import org.apache.poi.xslf.usermodel.XMLSlideShow;
 import org.apache.poi.xslf.usermodel.XSLFShape;
 import org.apache.poi.xslf.usermodel.XSLFSlide;
 import org.apache.poi.xslf.usermodel.XSLFTextShape;
-import ru.toshchev.latex.formula.LatexConversionException;
+import ru.toshchev.latex.exhibition.formula.LatexConversionException;
 
 import java.io.IOException;
 import java.io.InputStream;

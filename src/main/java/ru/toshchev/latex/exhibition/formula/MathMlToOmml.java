@@ -1,4 +1,4 @@
-package ru.toshchev.latex.formula;
+package ru.toshchev.latex.exhibition.formula;
 
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;

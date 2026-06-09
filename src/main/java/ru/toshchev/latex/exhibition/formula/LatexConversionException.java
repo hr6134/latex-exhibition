@@ -1,4 +1,4 @@
-package ru.toshchev.latex.formula;
+package ru.toshchev.latex.exhibition.formula;
 
 public class LatexConversionException extends Exception {
 

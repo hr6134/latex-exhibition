@@ -1,4 +1,4 @@
-package ru.toshchev.latex.formula;
+package ru.toshchev.latex.exhibition.formula;
 
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;

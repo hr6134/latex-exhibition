@@ -1,4 +1,4 @@
-package ru.toshchev.latex.formula;
+package ru.toshchev.latex.exhibition.formula;
 
 import org.apache.poi.xslf.usermodel.XSLFSlide;
 

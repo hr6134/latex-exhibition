@@ -1,4 +1,4 @@
-package ru.toshchev.latex.formula.inline;
+package ru.toshchev.latex.exhibition.formula.inline;
 
 /**
  * A segment of inline content: plain text, styled text, or a LaTeX formula.

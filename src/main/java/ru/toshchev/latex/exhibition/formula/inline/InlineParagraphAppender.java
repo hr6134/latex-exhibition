@@ -1,13 +1,13 @@
-package ru.toshchev.latex.formula.inline;
+package ru.toshchev.latex.exhibition.formula.inline;
 
 import org.apache.poi.xslf.usermodel.XSLFTextShape;
 import org.apache.xmlbeans.XmlCursor;
 import org.openxmlformats.schemas.drawingml.x2006.main.CTTextBody;
 import org.openxmlformats.schemas.drawingml.x2006.main.CTTextParagraph;
 import org.openxmlformats.schemas.presentationml.x2006.main.CTShape;
-import ru.toshchev.latex.formula.LatexConversionException;
-import ru.toshchev.latex.formula.LatexToMathMl;
-import ru.toshchev.latex.formula.MathMlToOmml;
+import ru.toshchev.latex.exhibition.formula.LatexConversionException;
+import ru.toshchev.latex.exhibition.formula.LatexToMathMl;
+import ru.toshchev.latex.exhibition.formula.MathMlToOmml;
 
 import java.util.List;
 

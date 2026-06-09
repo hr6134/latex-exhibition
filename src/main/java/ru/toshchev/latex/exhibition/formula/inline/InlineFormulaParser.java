@@ -1,4 +1,4 @@
-package ru.toshchev.latex.formula.inline;
+package ru.toshchev.latex.exhibition.formula.inline;
 
 import java.util.ArrayList;
 import java.util.List;
