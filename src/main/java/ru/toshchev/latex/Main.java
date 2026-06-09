@@ -6,7 +6,7 @@ import org.apache.poi.xslf.usermodel.XSLFSlide;
 import org.apache.poi.xslf.usermodel.XSLFSlideLayout;
 import org.apache.poi.xslf.usermodel.XSLFSlideMaster;
 import org.apache.poi.xslf.usermodel.XSLFTextShape;
-import ru.toshchev.latex.formula.inline.InlineParagraphAppender;
+import ru.toshchev.latex.formula.markdown.MarkdownSlideRenderer;
 
 import java.io.FileOutputStream;
 
@@ -27,21 +27,37 @@ public class Main {
             title.setText("Best Presentation Ever");
             title.getTextParagraphs().get(0).getTextRuns().get(0).setFontSize(36.0);
 
-            // Subtitle / content placeholder
+            // Render Markdown content into the content placeholder
             XSLFTextShape content = slide.getPlaceholder(1);
             content.clearText();
-            content.addNewTextParagraph().addNewTextRun().setText("If you thought physic is easy");
-            content.getTextParagraphs().get(0).getTextRuns().get(0).setFontSize(24.0);
-            content.addNewTextParagraph().addNewTextRun().setText(
-                    "Then look at this beauty.");
-            // Inline formula embedded in surrounding text
-            InlineParagraphAppender appender = new InlineParagraphAppender();
-            appender.append(content,
-                    "Schrödinger's cat is **jealous** of this *presentation*: " +
-                    "$\\mathrm{i}\\hbar \\frac{\\partial}{\\partial t} \\Psi = \\hat{H}\\Psi$" +
-                    ". ~~Not really~~ — look how `lovely` it is.");
 
-            appender.append(content, "See **important** result: $E=mc^2$");
+            String markdown = """
+                    ## Key equations
+                    
+                    The **Schrödinger equation** governs quantum mechanics:
+                    $\\mathrm{i}\\hbar \\frac{\\partial}{\\partial t} \\Psi = \\hat{H}\\Psi$
+                    
+                    ## Famous results
+                    
+                    - **Energy-mass**: $E = mc^2$
+                    - *Wave-particle* duality: $\\lambda = h / p$
+                    - Uncertainty: $\\Delta x \\, \\Delta p \\geq \\hbar / 2$
+                    
+                    ## Constants
+                    
+                    | Constant | Symbol | Value |
+                    |---|---|---|
+                    | Speed of light | c | 3×10⁸ m/s |
+                    | Planck constant | h | 6.626×10⁻³⁴ J·s |
+                    
+                    ```python
+                    # Compute energy
+                    E = m * c**2
+                    ```
+                    """;
+
+            MarkdownSlideRenderer renderer = new MarkdownSlideRenderer();
+            renderer.render(slide, content, markdown, 50, 420, 620);
 
             try (FileOutputStream out = new FileOutputStream("output.pptx")) {
                 pptx.write(out);
