@@ -6,7 +6,8 @@
     <modelVersion>4.0.0</modelVersion>
     
     <groupId>ru.toshchev</groupId>
-    <artifactId>latex</artifactId>
+    <artifactId>latex-exhibition</artifactId>
+    <name>latex-exhibition</name>
     <version>1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
