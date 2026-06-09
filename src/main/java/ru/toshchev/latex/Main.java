@@ -6,7 +6,7 @@ import org.apache.poi.xslf.usermodel.XSLFSlide;
 import org.apache.poi.xslf.usermodel.XSLFSlideLayout;
 import org.apache.poi.xslf.usermodel.XSLFSlideMaster;
 import org.apache.poi.xslf.usermodel.XSLFTextShape;
-import ru.toshchev.latex.formula.LatexFormulaInserter;
+import ru.toshchev.latex.formula.inline.InlineParagraphAppender;
 
 import java.io.FileOutputStream;
 
@@ -34,14 +34,12 @@ public class Main {
             content.getTextParagraphs().get(0).getTextRuns().get(0).setFontSize(24.0);
             content.addNewTextParagraph().addNewTextRun().setText(
                     "Then look at this beauty.");
-            content.addNewTextParagraph().addNewTextRun().setText(
-                    "Schrödinger's cat is jealous of this presentation.");
-
-            // Insert a LaTeX formula as a native OMML equation shape
-            LatexFormulaInserter formulaInserter = new LatexFormulaInserter();
-            formulaInserter.insert(slide,
-                    "\\[ \\mathrm{i}\\hbar \\frac{\\partial}{\\partial t} \\Psi(\\mathbf{r}, t) = \\left[ -\\frac{\\hbar^2}{2m} \\nabla^2 + V(\\mathbf{r}, t) \\right] \\Psi(\\mathbf{r}, t) \\]\n",
-                    50, 420, 620, 80);
+            // Inline formula embedded in surrounding text
+            InlineParagraphAppender appender = new InlineParagraphAppender();
+            appender.append(content,
+                    "Schrödinger's cat is jealous of this presentation: " +
+                    "$\\mathrm{i}\\hbar \\frac{\\partial}{\\partial t} \\Psi = \\hat{H}\\Psi$" +
+                    ". Look how lovely it is.");
 
             try (FileOutputStream out = new FileOutputStream("output.pptx")) {
                 pptx.write(out);
