@@ -1,6 +1,7 @@
 package ru.toshchev.latex.exhibition;
 
 import ru.toshchev.latex.exhibition.formula.LatexConversionException;
+import ru.toshchev.latex.exhibition.formula.markdown.MarkdownSlideRenderer;
 import ru.toshchev.latex.exhibition.formula.markdown.PptxTemplateRenderer;
 import ru.toshchev.latex.exhibition.provider.PptxFileProvider;
 
@@ -50,6 +51,23 @@ public class LatexExhibition {
     public static LatexExhibition fromProvider(PptxFileProvider provider)
             throws LatexConversionException {
         return new LatexExhibition(provider);
+    }
+
+    /**
+     * Creates an empty {@link PresentationBuilder} for assembling a presentation
+     * slide by slide.
+     *
+     * <pre>{@code
+     * LatexExhibition.newPresentation()
+     *     .addSlide(stream1, Map.of("{title}", "Slide 1", "{body}", "Hello $E=mc^2$"))
+     *     .addSlide(stream2, Map.of("{title}", "Slide 2", "{body}", "- item\n- item"))
+     *     .writeTo(outputStream);
+     * }</pre>
+     *
+     * @throws LatexConversionException if the internal XSLT processor cannot be initialised
+     */
+    public static PresentationBuilder newPresentation() throws LatexConversionException {
+        return new PresentationBuilder(new MarkdownSlideRenderer());
     }
 
     /**
