@@ -78,6 +78,52 @@ try (FileInputStream t1  = new FileInputStream("slide1-template.pptx");
 - Each `addSlide` call accepts a separate template, so each slide can have a completely different layout or theme.
 - Slides are merged at the OPC package level, preserving each slide's original master and layout — the output is a valid `.pptx` that opens correctly in PowerPoint, Keynote, and Google Slides.
 
+---
+
+### 2. Single-template renderer (`fromProvider`)
+
+If your template already contains all slides laid out, use `LatexExhibition.fromProvider()` to fill tokens across the whole presentation at once. The template is opened, every matching shape on every slide is replaced, and the result is written to the output.
+
+```java
+Map<String, String> values = Map.of(
+    "{title}", "My Presentation",
+    "{body}",  "The equation $E=mc^2$ is **famous**."
+);
+
+try (PptxFileProvider provider = new LocalFileProvider("template.pptx", "output.pptx")) {
+    LatexExhibition.fromProvider(provider).render(values);
+}
+```
+
+#### Available providers
+
+**`LocalFileProvider`** — template and output are local files:
+
+```java
+new LocalFileProvider("template.pptx", "output.pptx")
+// or with Path:
+new LocalFileProvider(Path.of("template.pptx"), Path.of("output.pptx"))
+```
+
+**`ClasspathFileProvider`** — template is bundled inside the jar, output is a local file:
+
+```java
+new ClasspathFileProvider("/templates/template.pptx", "output.pptx")
+```
+
+**`StreamFileProvider`** — both streams are provided by the caller (S3, HTTP, in-memory, etc.):
+
+```java
+InputStream  templateStream = s3Client.getObject(bucket, key);
+OutputStream outputBuffer   = new ByteArrayOutputStream();
+
+try (PptxFileProvider provider = new StreamFileProvider(templateStream, outputBuffer)) {
+    LatexExhibition.fromProvider(provider).render(values);
+}
+```
+
+You can also implement `PptxFileProvider` directly for any other backend.
+
 ### Supported Markdown content
 
 Each placeholder value is rendered as Markdown+LaTeX:
