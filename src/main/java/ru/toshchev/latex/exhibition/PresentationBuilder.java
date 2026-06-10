@@ -80,6 +80,9 @@ public class PresentationBuilder {
             if (source.getSlides().isEmpty()) {
                 throw new IllegalArgumentException("Slide template contains no slides");
             }
+            if (source.getSlides().size() > 1) {
+                throw new IllegalArgumentException("Slide template contains more than one slide");
+            }
             fillSlide(source.getSlides().get(0), values);
             source.write(buf);
         }

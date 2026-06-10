@@ -13,9 +13,9 @@ The overall pipeline is:
 ```
 Single-slide .pptx templates  +  Map<token, Markdown+LaTeX>
         ↓
-  PresentationBuilder (fills placeholders, merges slides at OPC level)
+PresentationBuilder (fills placeholders, merges slides at OPC level)
         ↓
-  Multi-slide .pptx output
+Multi-slide .pptx output
 ```
 
 The LaTeX conversion pipeline inside each slide is:
