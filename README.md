@@ -2,110 +2,95 @@
 
 ## About
 
-**latex-exhibition** is a Java library for embedding LaTeX math formulas into Apache POI PowerPoint (`.pptx`) presentations as **native Office Math (OMML) equations** — not images.
+**latex-exhibition** is a Java library for generating Apache POI PowerPoint (`.pptx`) presentations from per-slide PPTX templates, with support for **Markdown content** and **LaTeX math formulas** rendered as native Office Math (OMML) equations — not images.
 
-Formulas are rendered by PowerPoint/LibreOffice itself, so they scale perfectly, match the document theme, and remain fully editable after the file is opened.
+Formulas are rendered by PowerPoint/Keynote/LibreOffice itself, so they scale perfectly, match the document theme, and remain fully editable after the file is opened.
 
 ### How it works
 
-The conversion pipeline is:
+The overall pipeline is:
+
+```
+Single-slide .pptx templates  +  Map<token, Markdown+LaTeX>
+        ↓
+  PresentationBuilder (fills placeholders, merges slides at OPC level)
+        ↓
+  Multi-slide .pptx output
+```
+
+The LaTeX conversion pipeline inside each slide is:
 
 ```
 LaTeX string  →  MathML DOM (SnuggleTeX)  →  OMML XML (MML2OMML.XSL / Saxon-HE)  →  PPTX shape (Apache POI)
 ```
 
-Two insertion modes are supported:
-
-- **Standalone shape** — formula is placed at an absolute position on the slide.
-- **Inline paragraph** — formula is embedded inside a text paragraph alongside surrounding text, using `$...$` or `\[...\]` delimiters.
-
 ---
 
 ## Usage
 
-### 1. Standalone formula on a slide
+### 1. Slide-by-slide builder (primary API)
 
-Place a formula at a specific position (x, y, width, height in points):
+Create a template `.pptx` in PowerPoint or Keynote for each slide type. Inside each template, add text boxes whose **entire text** is a placeholder token, e.g. `{title}`, `{leftColumn}`, `{rightColumn}`.
+
+Then build the presentation slide by slide:
 
 ```java
-XMLSlideShow pptx = new XMLSlideShow();
-XSLFSlide slide = pptx.createSlide();
+Map<String, String> slide1 = Map.of(
+    "{title}", "Quantum Mechanics",
+    "{leftColumn}", """
+        ## Key equations
 
-LatexFormulaInserter inserter = new LatexFormulaInserter();
-inserter.insert(
-    slide,
-    "\\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}",
-    x: 100, y: 200, width: 400, height: 80
+        The **Schrödinger equation**:
+        $\\mathrm{i}\\hbar \\frac{\\partial}{\\partial t} \\Psi = \\hat{H}\\Psi$
+
+        - **Energy-mass**: $E = mc^2$
+        """,
+    "{rightColumn}", """
+        | Constant | Symbol | Value |
+        |---|---|---|
+        | Speed of light | c | 3×10⁸ m/s |
+        | Planck constant | h | 6.626×10⁻³⁴ J·s |
+        """
 );
 
-try (FileOutputStream out = new FileOutputStream("output.pptx")) {
-    pptx.write(out);
+Map<String, String> slide2 = Map.of(
+    "{title}", "Code Example",
+    "{body}", """
+        ```python
+        E = m * c**2
+        ```
+        """
+);
+
+try (FileInputStream t1  = new FileInputStream("slide1-template.pptx");
+     FileInputStream t2  = new FileInputStream("slide2-template.pptx");
+     FileOutputStream out = new FileOutputStream("output.pptx")) {
+
+    LatexExhibition.newPresentation()
+        .addSlide(t1, slide1)
+        .addSlide(t2, slide2)
+        .writeTo(out);
 }
 ```
 
-The formula string may optionally include display math delimiters:
+- Each template must contain **exactly one slide**.
+- Placeholder tokens must be the **sole text** of their text box — no surrounding characters.
+- Each `addSlide` call accepts a separate template, so each slide can have a completely different layout or theme.
+- Slides are merged at the OPC package level, preserving each slide's original master and layout — the output is a valid `.pptx` that opens correctly in PowerPoint, Keynote, and Google Slides.
 
-```java
-inserter.insert(slide, "\\[ E = mc^2 \\]", 50, 300, 300, 60);
-inserter.insert(slide, "$\\nabla \\cdot \\mathbf{E} = \\frac{\\rho}{\\varepsilon_0}$", 50, 400, 400, 60);
-```
+### Supported Markdown content
 
----
+Each placeholder value is rendered as Markdown+LaTeX:
 
-### 2. Inline formula inside a text paragraph
-
-Use `InlineParagraphAppender` to embed formulas within surrounding text. Formulas are delimited by `$...$`, `\(...\)`, or `\[...\]`:
-
-```java
-XSLFTextShape contentBox = slide.getPlaceholder(1);
-
-InlineParagraphAppender appender = new InlineParagraphAppender();
-appender.append(
-    contentBox,
-    "The energy-mass relation $E = mc^2$ changed physics forever."
-);
-```
-
-Multiple formulas in one string are supported:
-
-```java
-appender.append(
-    contentBox,
-    "Maxwell's equations: $\\nabla \\cdot \\mathbf{E} = \\frac{\\rho}{\\varepsilon_0}$ " +
-    "and $\\nabla \\times \\mathbf{B} = \\mu_0 \\mathbf{J} + \\mu_0 \\varepsilon_0 \\frac{\\partial \\mathbf{E}}{\\partial t}$."
-);
-```
-
-The result is a single `<a:p>` paragraph containing interleaved `<a:r>` text runs and `<a14:m>` equation elements — exactly how PowerPoint stores inline equations natively.
-
----
-
-### 3. Full example
-
-```java
-public static void main(String[] args) throws Exception {
-    try (XMLSlideShow pptx = new XMLSlideShow()) {
-        XSLFSlideMaster master = pptx.getSlideMasters().get(0);
-        XSLFSlideLayout layout = master.getLayout(SlideLayout.TITLE_AND_CONTENT);
-        XSLFSlide slide = pptx.createSlide(layout);
-
-        slide.getPlaceholder(0).setText("Schrödinger Equation");
-
-        XSLFTextShape content = slide.getPlaceholder(1);
-        content.clearText();
-
-        InlineParagraphAppender appender = new InlineParagraphAppender();
-        appender.append(content,
-            "The time-dependent Schrödinger equation: " +
-            "$\\mathrm{i}\\hbar \\frac{\\partial}{\\partial t} \\Psi = \\hat{H} \\Psi$" +
-            " — one of the most beautiful equations in physics.");
-
-        try (FileOutputStream out = new FileOutputStream("output.pptx")) {
-            pptx.write(out);
-        }
-    }
-}
-```
+| Syntax | Result |
+|---|---|
+| `**bold**`, `*italic*`, `~~strike~~` | Formatted text runs |
+| `# Heading` … `###### Heading` | Headings with scaled font size |
+| `- item` / `1. item` | Bullet and numbered lists |
+| `` `inline code` `` | Monospaced run |
+| ` ```lang … ``` ` | Code block (Courier New) |
+| `\| col \| … \|` | Table shape |
+| `$...$` or `\[...\]` | Inline/display LaTeX formula → native OMML |
 
 ---
 
